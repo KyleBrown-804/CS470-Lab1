@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+# Assignment PDF
+*.pdf
