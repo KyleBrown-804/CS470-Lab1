@@ -1,7 +1,5 @@
 [--------------- CWU SHELL ---------------]	
 
-COMMAND "MEMINF":
-
 NAME
 	meminf - prints system memory information depending on switches.
 

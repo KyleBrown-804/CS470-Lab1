@@ -19,7 +19,7 @@ COMMANDS
 
 	[ls] - Lists directory contents.
 
-	[man] - Manual, an interface to the system reference manuals.
+	[manual] - Manual, an interface to the system reference manuals.
 
 	[meminf] - Prints system memory information depending on switches.
 
@@ -33,10 +33,11 @@ COMMANDS
 	
 	[sysinf] - Lists system information depending on switches.
 
+	[touch] - Creates a new file.
+
 EXIT CODES
 	0	is OK,
 
-	1	if command entered was not found.
-
-
-
+	1	if command entered was not found,
+	
+	-1	if error occurs retrieving a manual page.

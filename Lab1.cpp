@@ -1,5 +1,12 @@
+/*
+*   Author: Kyle Brown
+*   Date: 4/5/2021
+*   CS 470 Operating Systems Lab 1
+*
+*   [Note]: main begins on line 514
+*/
+
 #include <stdio.h>
-// #include <sys/sysinfo.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -11,6 +18,11 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <algorithm>
+
+// For obtaining IP in Linux
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 
 // Tokenizes the user input to parse commands
 std::vector<std::string> tokenizeArray(std::string line) {
@@ -39,7 +51,7 @@ int checkCommand(std::string comm) {
     int exitCode = 0;
     bool isValid = false;
     int numComms = 13;
-    std::string validCommands[numComms] = {"exit", "ls", "cd", "cat", "clear", "pwd", "mkdir", "rmdir", "touch", "prompt", "sysinf", "meminf", "man"}; 
+    std::string validCommands[numComms] = {"exit", "ls", "cd", "cat", "clear", "pwd", "mkdir", "rmdir", "touch", "prompt", "sysinf", "meminf", "manual"}; 
 
     for (int i = 0; i < numComms; i++) {
 
@@ -85,93 +97,108 @@ int checkCommand(std::string comm) {
 // Gets system memory information given different parameters as switches
 int getMemInfo(std::string params) {
 
+    int statusCode = 0;
+
     if (params.find("a") != std::string::npos) {
         
         std::string line;
         std::ifstream file("/proc/meminfo", std::ifstream::in);
 
-        while (std::getline(file, line)) {
-            std::cout << line << std::endl;
+        if (! file) {
+            std::cout << "Error retrieving /proc/meminfo from Linux" << "\n";
+            statusCode = 1;
+        } else {
+            while (std::getline(file, line)) {
+                std::cout << line << std::endl;
+            }
         }
     }
 
     else {
-
         std::vector<std::string> infoArr;
 
         if (params.find("s") != std::string::npos) {
-            
             std::string line;
             std::ifstream file("/proc/meminfo", std::ifstream::in);
 
-            while (std::getline(file, line)) {
-                
-                if (line.find("SwapFree") != std::string::npos) {
+            if (! file) {
+                std::cout << "Error retrieving /proc/meminfo from Linux" << "\n";
+                statusCode = 1;
+            } 
+            
+            else {
+                while (std::getline(file, line)) {
+                    if (line.find("SwapFree") != std::string::npos) {
+                        std::vector<std::string> memInfArr = tokenizeArray(line);
+                        std::istringstream iss(memInfArr[1]);
+                        long long int swapFree = 0;
 
-                    std::vector<std::string> memInfArr = tokenizeArray(line);
+                        // SwapFree in kb originally; converts to bytes
+                        iss >> swapFree;
+                        swapFree = swapFree * 1024;
 
-                    std::istringstream iss(memInfArr[1]);
-                    long long int swapFree = 0;
-
-                    // SwapFree in kb originally; converts to bytes
-                    iss >> swapFree;
-                    swapFree = swapFree * 1024;
-
-                    std::string swapStr = memInfArr[0] + " " + std::to_string(swapFree) + " bytes";
-                    infoArr.push_back(swapStr);
+                        std::string swapStr = memInfArr[0] + " " + std::to_string(swapFree) + " bytes";
+                        infoArr.push_back(swapStr);
+                    }
                 }
             }
         }
 
         if (params.find("u") != std::string::npos) {
-            
             std::string line;
             std::ifstream file("/proc/meminfo", std::ifstream::in);
 
-            while (std::getline(file, line)) {
-                
-                if (line.find("MemFree") != std::string::npos) {
+            if (! file) {
+                std::cout << "Error retrieving /proc/meminfo from Linux" << "\n";
+                statusCode = 1;
+            }
 
-                    std::vector<std::string> memInfArr = tokenizeArray(line);
+            else {
+                while (std::getline(file, line)) {
+                    if (line.find("MemFree") != std::string::npos) {
+                        std::vector<std::string> memInfArr = tokenizeArray(line);
+                        std::istringstream iss(memInfArr[1]);
+                        long int memFree = 0;
 
-                    std::istringstream iss(memInfArr[1]);
-                    long int memFree = 0;
+                        // MemFree in kb originally; converts to bytes
+                        iss >> memFree;
+                        memFree = memFree * 1024;
 
-                    // MemFree in kb originally; converts to bytes
-                    iss >> memFree;
-                    memFree = memFree * 1024;
-
-                    std::string memStr = memInfArr[0] + " " + std::to_string(memFree) + " bytes";
-                    infoArr.push_back(memStr);
+                        std::string memStr = memInfArr[0] + " " + std::to_string(memFree) + " bytes";
+                        infoArr.push_back(memStr);
+                    }
                 }
             }
         }
 
         /* 
-        *   "Shmem: Total used shared memory (shared between several processes, 
+        *   "Shmem": Total used shared memory (shared between several processes, 
         *   thus including RAM disks, SYS-V-IPC and BSD like SHMEM)"
         *   https://access.redhat.com/solutions/406773
         */
         if (params.find("S") != std::string::npos) {
-
             std::string line;
             std::ifstream file("/proc/meminfo", std::ifstream::in);
 
-            while (std::getline(file, line)) {
-                
-                if (line.find("Shmem") != std::string::npos) {
+            if (! file) {
+                std::cout << "Error retrieving /proc/meminfo from Linux" << "\n";
+                statusCode = 1;
+            }
 
-                    std::vector<std::string> memInfArr = tokenizeArray(line);
+            else {
+                while (std::getline(file, line)) {
+                    if (line.find("Shmem") != std::string::npos) {
+                        std::vector<std::string> memInfArr = tokenizeArray(line);
+                        std::istringstream iss(memInfArr[1]);
+                        long int shmem = 0;
 
-                    std::istringstream iss(memInfArr[1]);
-                    long int shmem = 0;
+                        // Shmem in kb originally; converts to bytes
+                        iss >> shmem;
+                        shmem = shmem * 1024;
 
-                    // Shmem in kb originally; converts to bytes
-                    iss >> shmem;
-                    shmem = shmem * 1024;
-
-                    std::string shmemStr = memInfArr[0] + " " + std::to_string(shmem) + " bytes";
-                    infoArr.push_back(shmemStr);
+                        std::string shmemStr = memInfArr[0] + " " + std::to_string(shmem) + " bytes";
+                        infoArr.push_back(shmemStr);
+                    }
                 }
             }
         }
@@ -184,10 +211,108 @@ int getMemInfo(std::string params) {
     } // End of else
 
     std::cout << std::endl;
-    return 0;
+    return statusCode;
 
 } // End of getMemInfo()
 
+// Gets system information given different parameters as swtiches
+int getSysInfo(std::string params) {
+    int statusCode = 0;
+
+    // Grabs hostname of computer
+    if (params.find("h") != std::string::npos) {
+        std::string line;
+        std::ifstream file("/proc/sys/kernel/hostname", std::ifstream::in);
+
+        if (! file) {
+            std::cout << "Error retrieving /proc/sys/kernel/hostname from Linux" << "\n";
+            statusCode = 1;
+        } 
+        
+        else {
+            while (std::getline(file, line)) {
+                std::cout << "Hostname: " << line << "\n";
+            }
+        }
+    }
+
+    // Grabs IP address of the host
+    if (params.find("i") != std::string::npos) {
+
+        // First need host name as char *
+        std::string line;
+        std::ifstream file("/proc/sys/kernel/hostname", std::ifstream::in);
+        
+        if (! file) {
+            std::cout << "Error retrieving /proc/sys/kernel/hostname from Linux" << "\n";
+            statusCode = 1;
+        } 
+
+        else {
+            std::getline(file, line);
+            char *hostname = new char[line.length()+1];
+            strcpy(hostname, line.c_str());
+
+            // Second get "hostent" struct from <netdb.h>
+            char * IP;
+            struct hostent *host = gethostbyname(hostname);
+
+            IP = inet_ntoa(*((struct in_addr*) host->h_addr_list[0]));
+            std::cout << IP << "\n";
+
+            delete [] hostname;
+        }
+    }
+
+    // Grabs the number of processors and their model name (type)
+    if (params.find("p") != std::string::npos) {
+
+        std::string line;
+        std::ifstream file("/proc/cpuinfo", std::ifstream::in);
+
+        if (! file) {
+            std::cout << "Error retrieving /proc/cpuinfo from Linux" << "\n";
+            statusCode = 1;
+        } 
+
+        else {
+            int numProcessors = 0;
+            std::vector<std::string> procTypes;
+
+            while (std::getline(file, line)) {
+
+                if (line.find("processor") != std::string::npos) {
+                    numProcessors++;
+                }
+
+                if (line.find("model name") != std::string::npos) {
+                    std::vector<std::string> modelTokens = tokenizeArray(line);
+
+                    std::string processInfo = "";
+                    for (int i = 2; i < modelTokens.size(); i++) {
+                        if (i == modelTokens.size() - 1) {
+                            processInfo.append(modelTokens[i]);
+                        }
+                        else {
+                            processInfo.append(modelTokens[i] + " ");
+                        }
+                    }
+
+                    procTypes.push_back(processInfo);
+                }
+            }
+
+            for (int i = 0; i < numProcessors; i++) {
+                std::cout << "processor " << i << ": " << procTypes[i] << "\n";
+            }
+            std::cout << "Number of processors: " << numProcessors << "\n";
+        }
+    }
+
+    return statusCode;
+}
+
+// Helper function for error status with prompt command
 bool isValChar(std::string character) {
     if (character.length() > 1) {
         std::cout << "Invalid switch, [Character] argument given is more than 1 character\n";
@@ -199,19 +324,40 @@ bool isValChar(std::string character) {
     }
 }
 
-/*  
-*    Prompt switch with congifugrations:
-*   'prompt' -s [string] -c [character]
-*   'prompt' -sc [string] [character]   
-*   'prompt' -d 
-*/ 
+// Helper function to grab manual pages for commands
+int getCommandHelp(std::string comm) {
+    int statusCode = 0;
+    std::string path = comm + ".txt";
+    std::string line;
+    std::ifstream file(path, std::ifstream::in);
+
+    if (! file) {
+        std::cout << "Error: manual page not found, make sure you are in the root cwushell directory" << "\n";
+        statusCode = -1;
+    }
+
+    else {
+        std::string manPage = "";
+                                
+        while (std::getline(file, line)) {
+             manPage += line + "\n";
+        }
+
+        std::cout << manPage << "\n";
+    }
+
+    return statusCode;
+}
+
+// Changes the prompt or if given no parameter, changes to default
 int swtichPrompt(std::vector<std::string> args, std::string *promptStr) {
     int statusCode = 0;
     std::string endChar = ">";
     std::string newPrompt = "";
     std::string invalConfMsg("\nInvalid configuration of swtiches\n"
         "Usage:\n'prompt' -s [string] -c [character]\n"
-        "'prompt' -sc [string] [character]\n'prompt' -s [string]\n'prompt' -d\n");
+        "'prompt' -sc [string] [character]\n'prompt' -s [string]\n'prompt' -d\n"
+        "or 'prompt' (changes to default)\n");
     
     if (args.size() == 3 || args.size() == 4 || args.size() == 5) {
 
@@ -318,7 +464,8 @@ int swtichPrompt(std::vector<std::string> args, std::string *promptStr) {
         
         if (std::regex_match(args[1], dateConf)) {
 
-            // Help with formatting time correctly https://www.geeksforgeeks.org/strftime-function-in-c/
+            // Help with formatting time correctly 
+            // https://www.geeksforgeeks.org/strftime-function-in-c/
             time_t t;
             struct tm *tmp;
             char MY_TIME[50];
@@ -335,8 +482,8 @@ int swtichPrompt(std::vector<std::string> args, std::string *promptStr) {
         }
 
         else {
-            std::cout << "Invalid configuration, only valid single argument is 'prompt' -d\n";
-            statusCode = 3;
+            std::cout << invalConfMsg << std::endl;
+            statusCode = 1;
         }
     }
 
@@ -349,37 +496,20 @@ int swtichPrompt(std::vector<std::string> args, std::string *promptStr) {
     return statusCode;
 }
 
-// int getManPage(std::string commName, std::vector<std::string> args, ) {
 
-//     std::regex helpReg1("(-h)");
-//     std::regex helpReg2("(-help)");
-
-//     if (args[0].find("-") == std::string::npos) {
-//         std::cout << "Invalid syntax in arguments, use '-' to begin any argument" << "\n";
-//         exitCode = 2;
-//     }
-
-//     if (std::regex_match(argsArr[1], helpReg1) || std::regex_match(argsArr[1], helpReg2)) {
-//         // Display manual page here
-//         std::cout <<" MANUAL PAGE FOR PWD" << "\n";
-//     }
-
-//     else {
-//         std::cout << "Unknown argument given, valid options are '-h' and '-help'\n";
-//         exitCode = 1;
-//     }
-// }
-
-// Compile me with ---> g++ -o lab1 Lab1.cpp
 /*
-    CWU SHELL: 
-
-    Description:
-        First validates if command entered is known. If command is valid then all arguments
-        are passed to the appropriate command where the arguments (switches) are also checked
-        for syntax and validity. Upon success appropriate commands will be executed. If any
-        errors arise in the shell or a specific command, they will pass corresponding error codes
-        as the terminating exit code such as "Proccess exited with code 1".
+*   CWU SHELL: 
+*
+*   Compiling and Executing:
+*       Either compile with 'g++ Lab1.cpp' or 'g++ -o <name>.exe Lab1.cpp' for 
+*       an executable to run instead of the standard 'a.out'.    
+*
+*   Description:
+*       First validates if command entered is known. If command is valid then all arguments
+*       are passed to the appropriate command where the arguments (switches) are also checked
+*       for syntax and validity. Upon success appropriate commands will be executed. If any
+*       errors arise in the shell or a specific command, they will pass corresponding error codes
+*       as the terminating exit code such as "Proccess exited with code 1".
 */
 int main() {
 
@@ -423,29 +553,54 @@ int main() {
             strcpy(linuxComm, sysCommStr.c_str());
 
             if (command == "ls") {
-                int statusCode = system(linuxComm);
-                exitCode = statusCode;
+                if (sysCommStr.find("-help") != std::string::npos) {
+                    int statusCode = system("ls --help");
+                    exitCode = statusCode;
+                } else {
+                    int statusCode = system(linuxComm);
+                    exitCode = statusCode;
+                }   
             }
 
             else if (command == "cat") {
-                int statusCode = system(linuxComm);
-                exitCode = statusCode;
-                std::cout << "\n";
+                if (sysCommStr.find("-help") != std::string::npos) {
+                    int statusCode = system("cat --help");
+                    exitCode = statusCode;
+                } else {
+                    int statusCode = system(linuxComm);
+                    exitCode = statusCode;
+                    std::cout << "\n";
+                }
             }
 
             else if (command == "mkdir") {
-                int statusCode = system(linuxComm);
-                exitCode = statusCode;
+                if (sysCommStr.find("-help") != std::string::npos) {
+                    int statusCode = system("mkdir --help");
+                    exitCode = statusCode;
+                } else {
+                    int statusCode = system(linuxComm);
+                    exitCode = statusCode;
+                }
             }
 
             else if (command == "rmdir") {
-                int statusCode = system(linuxComm);
-                exitCode = statusCode;
+                if (sysCommStr.find("-help") != std::string::npos) {
+                    int statusCode = system("rmdir --help");
+                    exitCode = statusCode;
+                } else {
+                    int statusCode = system(linuxComm);
+                    exitCode = statusCode;
+                }
             }
 
             else if (command == "touch") {
-                int statusCode = system(linuxComm);
-                exitCode = statusCode;
+                if (sysCommStr.find("-help") != std::string::npos) {
+                    int statusCode = system("touch --help");
+                    exitCode = statusCode;
+                } else {
+                    int statusCode = system(linuxComm);
+                    exitCode = statusCode;
+                }
             }
 
             // Credit to Stack Overflow for the correct escape code 
@@ -488,35 +643,27 @@ int main() {
                     }
 
                     else {
-                        std::regex helpReg1("(-h)");
-                        std::regex helpReg2("(-help)");
-
                         if (argsArr[1].find("-") == std::string::npos) {
                             std::cout << "Invalid syntax in arguments, use '-' to begin any argument" << "\n";
-                            exitCode = 2;
+                            exitCode = -1;
                         }
 
-                        if (std::regex_match(argsArr[1], helpReg1) || std::regex_match(argsArr[1], helpReg2)) {
-                            // Display manual page here
-                            std::cout << "MANUAL PAGE FOR PWD" << "\n";
-                        }
-
-                        else {
-                            std::cout << "Unknown argument given, valid options are '-h' and '-help'\n";
-                            exitCode = 1;
-                        }
+                        exitCode = getCommandHelp("pwd");
                     }
-                }
-                
-                else {
-                    std::cout << "Inavalid number of arguments for 'pwd'\n" << "Usage: 'pwd' or 'pwd' [-help / -h]\n";
+                } else {
+                    std::cout << "Inavalid number of arguments for 'pwd'\n" << "Usage: 'pwd' or 'pwd' -help\n";
+                    exitCode = 1;
                 }
             }
 
 
             /* 
-            *   [----- Below are commands which do not use any system calls -----]
+            *   [----- Below are the main commands which do not use any system calls -----]
             */  
+            else if (command == "manual") {
+                exitCode = getCommandHelp("manual");
+            }
+
             else if (command == "exit") {
                 
                 if (argsArr.size() <= 2) {
@@ -526,17 +673,14 @@ int main() {
 
                         if (iss >> exitCode) {
                             iss >> exitCode;
-                        }
-
-                        else {
+                        } else {
                             std::cout << "Invalid argument: second arguement for 'exit' command should be an integer" << "\n";
                         }
                     }
-                } 
-
-                else {
+                } else {
                     std::cout << "Invalid number of arguments" << "\n"
                     << "Usage: 'exit' or 'exit' [number]" << "\n";
+                    exitCode = 1;
                 }
             }
 
@@ -548,10 +692,8 @@ int main() {
                 }
                 else {
 
-                    if (argsArr[1].find("-help") != std::string::npos 
-                        || argsArr[1].find("-h") != std::string::npos) {
-
-                        // Display manual page here                            
+                    if (argsArr[1].find("-help") != std::string::npos) {
+                        exitCode = getCommandHelp("prompt");                            
                     }
                     else {
                         exitCode = swtichPrompt(argsArr, &prompt);
@@ -560,16 +702,57 @@ int main() {
             }
 
             else if (command == "sysinf") {
+                
+                if (argsArr.size() < 2 || argsArr[1].find("-help") != std::string::npos) {
+                    exitCode = getCommandHelp("sysinf");
+                }
 
+                else {
+                    bool isValid = true;
+
+                    // Checks for any errors in arguments (switches)
+                    for (int i = 1; i < argsArr.size(); i++) {
+                        
+                        std::regex valArgs ("(-[hip]+)");
+
+                        if (argsArr[i].find("-") == std::string::npos) {
+                            
+                            std::cout << "Invalid syntax in arguments, use '-' to begin any argument" << "\n";
+                            exitCode = 2;
+
+                            isValid = false;
+                            break;
+                        }
+
+                        if (! std::regex_match(argsArr[i], valArgs)) {
+                            
+                            std::cout << "Unknown argument given, valid options are 'h', 'i', and 'p'" << "\n";
+                            exitCode = 1;
+
+                            isValid = false;
+                            break;
+                        }
+                    }
+
+                    // If switch arguments given are valid then all arguments are joined together
+                    if (isValid) {
+                        std::string switches = "";
+
+                        for (int i = 1; i < argsArr.size(); i++) {
+                            
+                            std::string curArg = argsArr[i];
+                            switches.append(curArg.substr(1));
+                        }
+
+                        exitCode = getSysInfo(switches);
+                    }
+                }
             }
 
             else if (command == "meminf") {
                 
-                if (argsArr.size() < 2 || argsArr[1].find("-help") != std::string::npos 
-                    || argsArr[1].find("-h") != std::string::npos) {
-
-                    
-                    // Display manual page here
+                if (argsArr.size() < 2 || argsArr[1].find("-help") != std::string::npos) {
+                    exitCode = getCommandHelp("meminf");
                 }
 
                 else {
@@ -612,14 +795,10 @@ int main() {
                         exitCode = getMemInfo(switches);
                     }
                 }
-
-            } // End of meminf command  
-
+            }  
         } // End command checks
-
     } // End of main while loop
 
     std::cout << "\n" << "Process exited with code " << exitCode << "\n";
     return exitCode;
 }
-

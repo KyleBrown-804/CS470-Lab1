@@ -1,0 +1,28 @@
+[--------------- CWU SHELL ---------------]	
+
+NAME
+	sysinf - prints system and network information depending on switches.
+
+SYNOPSIS
+	sysinf [OPTION]...
+	sysinf [OPTION 1]... [OPTION 2]... [OPTION N]...	
+
+DESCRIPTION
+	Lists information about the system network properties and cpu information.
+	commands -h and -i will display network information while -p lists all processors
+	detected and the type of processor they are.
+
+	List of availible switches are:
+	
+	-h (Lists the system hostname)
+
+	-i (Lists the ip address of the host)
+
+	-p (Lists the number of processors and their type)
+
+EXIT CODES
+	0	is OK,
+
+	1	if an unknown switch given,
+
+	2	if invalid syntax in parameters.
