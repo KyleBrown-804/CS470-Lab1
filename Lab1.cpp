@@ -3,9 +3,9 @@
 *   Date: 4/5/2021
 *   CS 470 Operating Systems Lab 1
 *
-*   [Note]: main begins on line 514
+*   [Note]: main begins on line 488
 */
-
+#include "man_pages.h"
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -50,8 +50,8 @@ int checkCommand(std::string comm) {
     
     int exitCode = 0;
     bool isValid = false;
-    int numComms = 13;
-    std::string validCommands[numComms] = {"exit", "ls", "cd", "cat", "clear", "pwd", "mkdir", "rmdir", "touch", "prompt", "sysinf", "meminf", "manual"}; 
+    int numComms = 14;
+    std::string validCommands[numComms] = {"exit", "ls", "cd", "cat", "clear", "pwd", "mkdir", "rmdir", "rm", "touch", "prompt", "sysinf", "meminf", "man"}; 
 
     for (int i = 0; i < numComms; i++) {
 
@@ -324,31 +324,6 @@ bool isValChar(std::string character) {
     }
 }
 
-// Helper function to grab manual pages for commands
-int getCommandHelp(std::string comm) {
-    int statusCode = 0;
-    std::string path = comm + ".txt";
-    std::string line;
-    std::ifstream file(path, std::ifstream::in);
-
-    if (! file) {
-        std::cout << "Error: manual page not found, make sure you are in the root cwushell directory" << "\n";
-        statusCode = -1;
-    }
-
-    else {
-        std::string manPage = "";
-                                
-        while (std::getline(file, line)) {
-             manPage += line + "\n";
-        }
-
-        std::cout << manPage << "\n";
-    }
-
-    return statusCode;
-}
-
 // Changes the prompt or if given no parameter, changes to default
 int swtichPrompt(std::vector<std::string> args, std::string *promptStr) {
     int statusCode = 0;
@@ -501,8 +476,7 @@ int swtichPrompt(std::vector<std::string> args, std::string *promptStr) {
 *   CWU SHELL: 
 *
 *   Compiling and Executing:
-*       Either compile with 'g++ Lab1.cpp' or 'g++ -o <name>.exe Lab1.cpp' for 
-*       an executable to run instead of the standard 'a.out'.    
+*       Compiles with 'g++ -o 'lab1.exe' man_pages.cpp Lab1.cpp';
 *
 *   Description:
 *       First validates if command entered is known. If command is valid then all arguments
@@ -553,54 +527,34 @@ int main() {
             strcpy(linuxComm, sysCommStr.c_str());
 
             if (command == "ls") {
-                if (sysCommStr.find("-help") != std::string::npos) {
-                    int statusCode = system("ls --help");
-                    exitCode = statusCode;
-                } else {
-                    int statusCode = system(linuxComm);
-                    exitCode = statusCode;
-                }   
+                int statusCode = system(linuxComm);
+                exitCode = statusCode;
             }
 
             else if (command == "cat") {
-                if (sysCommStr.find("-help") != std::string::npos) {
-                    int statusCode = system("cat --help");
-                    exitCode = statusCode;
-                } else {
-                    int statusCode = system(linuxComm);
-                    exitCode = statusCode;
-                    std::cout << "\n";
-                }
+                int statusCode = system(linuxComm);
+                exitCode = statusCode;
+                std::cout << "\n";
             }
 
             else if (command == "mkdir") {
-                if (sysCommStr.find("-help") != std::string::npos) {
-                    int statusCode = system("mkdir --help");
-                    exitCode = statusCode;
-                } else {
-                    int statusCode = system(linuxComm);
-                    exitCode = statusCode;
-                }
+                int statusCode = system(linuxComm);
+                exitCode = statusCode;
             }
 
             else if (command == "rmdir") {
-                if (sysCommStr.find("-help") != std::string::npos) {
-                    int statusCode = system("rmdir --help");
-                    exitCode = statusCode;
-                } else {
-                    int statusCode = system(linuxComm);
-                    exitCode = statusCode;
-                }
+                int statusCode = system(linuxComm);
+                exitCode = statusCode;
             }
 
             else if (command == "touch") {
-                if (sysCommStr.find("-help") != std::string::npos) {
-                    int statusCode = system("touch --help");
-                    exitCode = statusCode;
-                } else {
-                    int statusCode = system(linuxComm);
-                    exitCode = statusCode;
-                }
+                int statusCode = system(linuxComm);
+                exitCode = statusCode;
+            }
+
+            else if (command == "rm") {
+                int statusCode = system(linuxComm);
+                exitCode = statusCode;
             }
 
             // Credit to Stack Overflow for the correct escape code 
@@ -643,15 +597,17 @@ int main() {
                     }
 
                     else {
-                        if (argsArr[1].find("-") == std::string::npos) {
-                            std::cout << "Invalid syntax in arguments, use '-' to begin any argument" << "\n";
+                        if (argsArr[1].find("--") == std::string::npos) {
+                            std::cout << "Invalid syntax in arguments, use '--' for '--help'" << "\n";
                             exitCode = -1;
                         }
 
-                        exitCode = getCommandHelp("pwd");
+                        else {
+                            exitCode = man_pages::getPWDHelp();
+                        }
                     }
                 } else {
-                    std::cout << "Inavalid number of arguments for 'pwd'\n" << "Usage: 'pwd' or 'pwd' -help\n";
+                    std::cout << "Inavalid number of arguments for 'pwd'\n" << "Usage: 'pwd' or 'pwd' --help\n";
                     exitCode = 1;
                 }
             }
@@ -660,8 +616,8 @@ int main() {
             /* 
             *   [----- Below are the main commands which do not use any system calls -----]
             */  
-            else if (command == "manual") {
-                exitCode = getCommandHelp("manual");
+            else if (command == "man") {
+                exitCode = man_pages::getManual();
             }
 
             else if (command == "exit") {
@@ -692,8 +648,8 @@ int main() {
                 }
                 else {
 
-                    if (argsArr[1].find("-help") != std::string::npos) {
-                        exitCode = getCommandHelp("prompt");                            
+                    if (argsArr[1].find("--help") != std::string::npos) {
+                        exitCode = man_pages::getPromptHelp();                           
                     }
                     else {
                         exitCode = swtichPrompt(argsArr, &prompt);
@@ -703,8 +659,8 @@ int main() {
 
             else if (command == "sysinf") {
                 
-                if (argsArr.size() < 2 || argsArr[1].find("-help") != std::string::npos) {
-                    exitCode = getCommandHelp("sysinf");
+                if (argsArr.size() < 2 || argsArr[1].find("--help") != std::string::npos) {
+                    exitCode = man_pages::getSysinfHelp();
                 }
 
                 else {
@@ -751,8 +707,8 @@ int main() {
 
             else if (command == "meminf") {
                 
-                if (argsArr.size() < 2 || argsArr[1].find("-help") != std::string::npos) {
-                    exitCode = getCommandHelp("meminf");
+                if (argsArr.size() < 2 || argsArr[1].find("--help") != std::string::npos) {
+                    exitCode = man_pages::getMeminfHelp();
                 }
 
                 else {

@@ -3,19 +3,19 @@ A mini UNIX shell for lab 1 of CS470 Operating Systems.
 
 This mini shell was developed in Linux Ubuntu 20.04 but should work in similar Debian based Linux environments or ones that share the same system file structure.
 
-In this shell you will find several normal linux commands which essentially call their corresponding system commands (except clear and pwd). These commands are ls, cd, cat, mkdir, rmdir, touch, pwd, and clear.
+In this shell you will find several normal linux commands which essentially call their corresponding system commands (except clear and pwd). These commands are ls, cd, cat, mkdir, rmdir, touch, rm, pwd, and clear.
 
 The custom commands for the lab assignment "exit", "meminf", "sysinf", and "prompt" do not use any system calls and only derive information from linux files and C/C++ libraries which linux itself uses and documents in it's man pages.
 
 Compiling & Executing:
     The code base while large was kept in a single .cpp file for simplicity. The only required library in linux should be the standard g++ compiler for c++. Besides that the shell is only usable in linux/Unix but keep in mind it was developed for Ubuntu 20.04.
 
-    Simply compile with 'g++ Lab1.cpp' for an a.out file or 'g++ -o <name>.exe Lab1.cpp' for an executable shell program.
+    Simply compile with the command 'g++ -o lab1.exe man_pages.cpp Lab1.cpp' and run with './lab1.exe'.
 
 Help/Manual:
-    For a general manual and list of all available commands use the 'manual' command in the shell. 
+    For a general manual and list of all available commands use the 'man' command in the shell. 
     
-    For all other commands (except for cd, clear, and exit for obvious reasons) a corresponding manual page will come up when [command] -help is entered. Some manual pages are derived from their native linux manual pages (all except the custom commands and pwd).
+    For all other commands (except for cd, clear, and exit for obvious reasons) a corresponding manual page will come up when [command] --help is entered. Some manual pages are derived from their native linux manual pages (all except the custom commands and pwd).
 
 Custom Commands:
 
