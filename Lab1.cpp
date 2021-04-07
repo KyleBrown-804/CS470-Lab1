@@ -526,35 +526,65 @@ int main() {
             char linuxComm[sysCommStr.size()+1];
             strcpy(linuxComm, sysCommStr.c_str());
 
+            // Checking if help command was issued and setting flag if so
+            bool helpFlag = false;
+            std::regex helpReg1("(-h)");
+            std::regex helpReg2("(--help)");
+
+            if (argsArr.size() == 2) {
+                if (std::regex_match(argsArr[1], helpReg1) || 
+                    std::regex_match(argsArr[1], helpReg2)) {
+                    helpFlag = true;
+                }
+            }
+
             if (command == "ls") {
-                int statusCode = system(linuxComm);
-                exitCode = statusCode;
+                if (helpFlag) {
+                    exitCode = system("ls --help");
+                } else {
+                    exitCode = system(linuxComm);
+                }
             }
 
             else if (command == "cat") {
-                int statusCode = system(linuxComm);
-                exitCode = statusCode;
-                std::cout << "\n";
+                if (helpFlag) {
+                    exitCode = system("cat --help");
+                } else {
+                    exitCode = system(linuxComm);
+                    std::cout << "\n";
+                }
             }
 
             else if (command == "mkdir") {
-                int statusCode = system(linuxComm);
-                exitCode = statusCode;
+                if (helpFlag) {
+                    exitCode = system("mkdir --help");
+                } else {
+                    exitCode = system(linuxComm);
+                }
             }
 
             else if (command == "rmdir") {
-                int statusCode = system(linuxComm);
-                exitCode = statusCode;
+                if (helpFlag) {
+                    exitCode = system("rmdir --help");
+                } else {
+                    exitCode = system(linuxComm);
+                }
             }
 
             else if (command == "touch") {
-                int statusCode = system(linuxComm);
-                exitCode = statusCode;
+                if (helpFlag) {
+                    exitCode = system("touch --help");
+                } else {
+                    exitCode = system(linuxComm);
+                }
             }
 
             else if (command == "rm") {
-                int statusCode = system(linuxComm);
-                exitCode = statusCode;
+                if (helpFlag) {
+                    exitCode = system("rm --help");
+                } else {
+                    exitCode = system(linuxComm);
+                }
             }
 
             // Credit to Stack Overflow for the correct escape code 
@@ -594,20 +624,21 @@ int main() {
                     
                     if (argsArr.size() == 1) {
                         std::cout << get_current_dir_name() << "\n";
+                        exitCode = 0;
                     }
 
                     else {
-                        if (argsArr[1].find("--") == std::string::npos) {
-                            std::cout << "Invalid syntax in arguments, use '--' for '--help'" << "\n";
-                            exitCode = -1;
+                        if (helpFlag) {
+                            exitCode = man_pages::getPWDHelp();
                         }
 
-                        else {
-                            exitCode = man_pages::getPWDHelp();
+                        else { 
+                            std::cout << "Unknown argument, for 'pwd'\n" << "Usage: 'pwd', 'pwd' -h, or 'pwd' --help\n";
+                            exitCode = -1;
                         }
                     }
                 } else {
-                    std::cout << "Inavalid number of arguments for 'pwd'\n" << "Usage: 'pwd' or 'pwd' --help\n";
+                    std::cout << "Inavalid number of arguments for 'pwd'\n" << "Usage: 'pwd', 'pwd' -h, or 'pwd' --help\n";
                     exitCode = 1;
                 }
             }
@@ -648,7 +679,7 @@ int main() {
                 }
                 else {
 
-                    if (argsArr[1].find("--help") != std::string::npos) {
+                    if (helpFlag) {
                         exitCode = man_pages::getPromptHelp();                           
                     }
                     else {
@@ -659,7 +690,8 @@ int main() {
 
             else if (command == "sysinf") {
                 
-                if (argsArr.size() < 2 || argsArr[1].find("--help") != std::string::npos) {
+                // Special case for sysinf '-h' should not trigger help
+                if (argsArr.size() < 2 || (helpFlag && !std::regex_match(argsArr[1], helpReg1))) {
                     exitCode = man_pages::getSysinfHelp();
                 }
 
@@ -707,7 +739,7 @@ int main() {
 
             else if (command == "meminf") {
                 
-                if (argsArr.size() < 2 || argsArr[1].find("--help") != std::string::npos) {
+                if (argsArr.size() < 2 || helpFlag) {
                     exitCode = man_pages::getMeminfHelp();
                 }
 

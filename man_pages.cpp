@@ -26,7 +26,7 @@ int man_pages::getManual() {
     "\t[sysinf] - Lists system information depending on switches.\n\n"
     "\t[touch] - Creates a new file.\n\n"
     "[HELP]\n"
-    "\tAny of the commands listed above may be entered followed by '--help' to display an\n"
+    "\tAny of the commands listed above may be entered followed by '--help' or '-h' to display an\n"
     "\tindividual manual page detailing the command and all available switches it has.\n\n"
     "[EXIT CODES]\n"
     "\t0	is OK,\n\n"
